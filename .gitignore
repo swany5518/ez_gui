@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+.vs/ez_gui/v16/.suo
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+*.ipch
+*.pdb
+*.idb
+*.recipe
+*.log
+*.tlog
+*.txt
+*.exp
+*.ilk
