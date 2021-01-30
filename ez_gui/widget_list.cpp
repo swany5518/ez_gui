@@ -4,10 +4,10 @@
 // owned widget definitions
 //
 
-//owned_widget::owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx) :
-//	p_wdgt(std::move(p_wdgt)),	
-//	owned_styles_idx(owned_styles_idx)
-//{ }
+owned_widget::owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx) :
+	p_wdgt(std::move(p_wdgt)),	
+	owned_styles_idx(owned_styles_idx)
+{ }
 
 //
 // widget list definitions
@@ -49,7 +49,7 @@ widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& 
 	input_msgs()
 { }
 
-//widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, const std::vector<owned_widget>& owned_widgets, std::vector<std::unique_ptr<style>> owned_styles) :
+//widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, const std::vector<owned_widget>& owned_widgets, std::vector<>> owned_styles) :
 //	top_left(top_left),
 //	size(size),
 //	background(background),
@@ -125,7 +125,7 @@ void widget_list::draw_widgets()
 
     widget::p_renderer->add_rect_filled_multicolor(top_left, size, background.tl_clr, background.tr_clr, background.bl_clr, background.br_clr);
 
-	for (auto& widget : widgets)
+	for (auto widget : widgets)
 		widget->draw();
 }
 
@@ -209,11 +209,11 @@ std::string widget_list::to_string()
 	std::string styles_str{};
 	std::vector<style*> styles_to_save{};
 
-	for (auto w : widgets)
+	for (auto& w : widgets)
 	{
 		uint32_t style_idx = 0;
 		auto iterator = std::find(styles_to_save.begin(), styles_to_save.end(), w->p_style);
-
+	
 		if (iterator == styles_to_save.end())
 		{
 			styles_to_save.push_back(w->p_style);
@@ -222,7 +222,7 @@ std::string widget_list::to_string()
 		}
 		else
 			style_idx = std::distance(styles_to_save.begin(), iterator);
-
+	
 		widgets_str += "\t\towned_widget\n\t\t{\nstd::make_unique<widget>(\n" + w->to_string(4) + ", " + std::to_string(style_idx) + "/*owned_widget style index*/\n\t\t}" +
 			(w == widgets.back() ? "" : ",") + "\n";
 	}

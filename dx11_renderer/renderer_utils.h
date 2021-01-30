@@ -75,6 +75,18 @@ struct color
 	std::string to_string() const;
 };
 
+// namespace for preset colors
+namespace colors
+{
+	const inline color white{ 1.f, 1.f, 1.f, 1.f };
+	const inline color black{ 0.f, 0.f, 0.f, 1.f };
+	const inline color gray{ .5f, .5f, .5f, 1.f };
+	const inline color red{ 1.f, 0.f, 0.f, 1.f };
+	const inline color green{ 0.f, 1.f, 0.f, 1.f };
+	const inline color blue{ 0.f, 0.f, 1.f, 1.f };
+	const inline color purple{ 1.f, 0.f, 1.f, 1.f };
+};
+
 // text formatting flags
 enum class text_align : uint32_t
 {

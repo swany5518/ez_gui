@@ -17,12 +17,11 @@
 struct owned_widget
 {
     std::unique_ptr<widget> p_wdgt;
-	//widget wdgt;			            // the actual widget object ptr
 	uint32_t owned_styles_idx;          // the index the widget will have in the onwed styles list
 
-	//owned_widget() = delete;
-   // owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx);
-
+	owned_widget() = delete;
+	owned_widget(const owned_widget& ) = delete;
+    owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx);
 };
 
 class widget_list
@@ -31,6 +30,7 @@ public:
 	widget_list();
 	widget_list(const vec2& top_left, const vec2& size);
 	widget_list(const vec2& top_left, const vec2& size, const mc_rect& background);
+	widget_list(const widget_list& other) = delete;
 	//widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, const std::vector<owned_widget>& owned_widgets, std::vector<std::unique_ptr<style>> owned_styles);
 
 	// add a single widget to the widget list
@@ -78,13 +78,63 @@ private:
 
 	std::vector<widget*> widgets;				        // vector of widget ptrs the list contains
 	std::vector<owned_widget> owned_widgets;            // vector of widgets this instance owns
-	std::vector<std::unique_ptr<style>> owned_styles;	// vector of styles this instance owns, must be heap allocated to avoid object slicing
+	std::vector<style> owned_styles;	// vector of styles this instance owns, must be heap allocated to avoid object slicing
 	std::queue<widget_input> input_msgs;		        // input message queue
 
 	// handle next input message in the queue, if no messages are present, the function just returns, called in draw_widgets() before drawing
 	void handle_next_input();
 };
 
+namespace globals
+{
+	// globally accessed list of all widget lists
+	inline std::vector<widget_list> widget_lists;
+
+	// wndproc handler function that passes messages onto widget lists
+	inline bool widget_list_wndproc_handler(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param)
+	{
+		auto get_window_pos = [hwnd]() -> vec2
+		{
+			RECT wnd_pos{};
+			GetWindowRect(hwnd, &wnd_pos);
+			return vec2{ static_cast<float>(wnd_pos.left), static_cast<float>(wnd_pos.top) };
+		};
+
+		static vec2 wnd_pos;
+
+		switch (message)
+		{
+		case WM_CREATE:
+		case WM_MOVE:
+		case WM_SIZE:
+			wnd_pos = get_window_pos();
+			break;
+		case WM_MOUSEMOVE:
+			for (auto& widgets : widget_lists)
+				widgets.add_input_msg(widget_input{ vec2{GET_X_LPARAM(l_param), GET_Y_LPARAM(l_param)} });
+			break;
+		case WM_LBUTTONDOWN:
+			SetCapture(hwnd);
+			for (auto& widgets : widget_lists)
+				widgets.add_input_msg(widget_input{ input_type::lbutton_down, vec2{GET_X_LPARAM(l_param), GET_Y_LPARAM(l_param)} });
+			break;
+		case WM_LBUTTONUP:
+			//std::cout << "WM_LBUTTONUP" << std::endl;
+			ReleaseCapture();
+			for (auto& widgets : widget_lists)
+				widgets.add_input_msg(widget_input{ input_type::lbutton_up, vec2{GET_X_LPARAM(l_param), GET_Y_LPARAM(l_param)} });
+			break;
+		case WM_CHAR:
+			for (auto& widgets : widget_lists)
+				widgets.add_input_msg(static_cast<char>(w_param));
+			break;
+		default:
+			return false;
+		}
+
+		return true;
+	}
+}
 // retrieve a list needed to draw editing widgets for a given slider_style ptr
 //inline static widget_list get_slider_style_edit_list(slider_style* p_slider_style)
 //{
