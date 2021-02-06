@@ -49,23 +49,23 @@ widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& 
 	input_msgs()
 { }
 
-//widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, const std::vector<owned_widget>& owned_widgets, std::vector<>> owned_styles) :
-//	top_left(top_left),
-//	size(size),
-//	background(background),
-//	active(true),
-//	move_mode(false),
-//	widgets(),
-//	owned_widgets(owned_widgets),
-//	owned_styles(owned_styles),
-//	input_msgs()
-//{ 
-//	for (auto& owned_widget : this->owned_widgets)
-//	{
-//		owned_widget.p_wdgt->set_style(owned_styles[owned_widget.owned_styles_idx].get());
-//		widgets.push_back(owned_widget.p_wdgt.get());
-//	}
-//}
+widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, std::vector<owned_widget>& owned_widgets, std::vector<std::unique_ptr<style>>& owned_styles) :
+	top_left(top_left),
+	size(size),
+	background(background),
+	active(true),
+	move_mode(false),
+	widgets(),
+	owned_widgets(std::move(owned_widgets)),
+	owned_styles(std::move(owned_styles)),
+	input_msgs()
+{ 
+	for (auto& owned_widget : this->owned_widgets)
+	{
+		owned_widget.p_wdgt->set_style(owned_styles[owned_widget.owned_styles_idx].get());
+		widgets.push_back(owned_widget.p_wdgt.get());
+	}
+}
 
 void widget_list::add_widget(widget* p_widget)
 {
