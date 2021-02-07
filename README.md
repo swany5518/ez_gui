@@ -1,4 +1,4 @@
-# ez_gui
+# ez_gui (work in progress)
 a directx11 based gui library designed for quickly creating user interfaces by runtime editing
 
 ### information
