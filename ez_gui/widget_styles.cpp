@@ -360,3 +360,34 @@ bool color_picker_style::operator!=(const color_picker_style& other) const
 {
 	return memcmp(this, &other, sizeof(color_picker_style));
 }
+
+//
+// color editor style definitions
+//
+
+color_editor_style::color_editor_style()
+	: text()
+	, border()
+	, bg()
+{ }
+
+color_editor_style::color_editor_style(const text_style& text, const border_style& border, const mc_rect& bg)
+	: text(text)
+	, border(border)
+	, bg(bg)
+{ }
+
+std::string color_editor_style::to_string(uint16_t indent_amt) const
+{
+	
+	std::string tab_str(indent_amt, '\t');
+	std::string brace_str(indent_amt > 0 ? indent_amt - 1 : 0, '\t');
+
+	return brace_str + "color_picker_style\n" +
+		brace_str + "{\n" +
+		text.to_string(indent_amt + 1) + ",\n" +
+		border.to_string(indent_amt + 1) + ",\n" +
+		bg.to_string(indent_amt + 1) + ",\n" +
+		brace_str + '}';
+	
+}

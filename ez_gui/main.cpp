@@ -9,18 +9,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_pa
 {
     globals::widget_list_wndproc_handler(hwnd, message, w_param, l_param);
    
+    if (message == WM_CLOSE)
+        std::cout << std::endl;
+
     return DefWindowProc(hwnd, message, w_param, l_param);
 }
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
+int main()
 {
-	WNDCLASSEX wc;
+    WNDCLASSEX wc;
 
-	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+    ZeroMemory(&wc, sizeof(WNDCLASSEX));
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
+    wc.hInstance = GetModuleHandle(NULL);
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.lpszClassName = L"WindowClass";
     RegisterClassExW(&wc);
@@ -28,28 +31,43 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     RECT wr = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
-    HWND hwnd = CreateWindowEx(NULL, L"WindowClass", L"renderer example", WS_OVERLAPPEDWINDOW, 300, 300, wr.right - wr.left, wr.bottom - wr.top, NULL, NULL, hInstance, NULL);
-    ShowWindow(hwnd, nCmdShow);
+    HWND hwnd = CreateWindowEx(NULL, L"WindowClass", L"renderer example", WS_OVERLAPPEDWINDOW, 300, 300, wr.right - wr.left, wr.bottom - wr.top, NULL, NULL, GetModuleHandle(NULL), NULL);
+    ShowWindow(hwnd, SW_SHOW);
 
     renderer renderer{};
     renderer.initialize(hwnd);
+    renderer.set_render_target_color(colors::white);
     widget::set_renderer(&renderer);
 
-    MSG msg_;
+    slider_style sldr_style_test{ text_style{12.f, colors::blue}, border_style{1.f, colors::red}, mc_rect{colors::black}, mc_rect{colors::gray} };
+    float test_float = 20.f;
+    slider<float> slider_test{ vec2{500.f, 100.f}, vec2{100.f, 20.f}, L"test slider", &test_float, 0.f, 100.f, &sldr_style_test };
+
+    color test_clr{1.f, 1.f, 1.f, 1.f};
+    color_editor_style clr_edit_style{ {}, {}, {colors::gray} };
+    color_editor editor{ {400.f, 500.f}, {300.f, 200.f}, L"editor", &test_clr, &clr_edit_style };
+
+    globals::widget_lists.emplace_back(std::move(get_slider_style_edit_list(&sldr_style_test)));
+    globals::widget_lists[0].add_widget(&slider_test);
+    globals::widget_lists[0].add_widget(&editor);
 
     while (TRUE)
     {
-        if (PeekMessage(&msg_, NULL, 0, 0, PM_REMOVE))
+        MSG msg{0};
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg_);
-            DispatchMessage(&msg_);
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
 
-            if (msg_.message == WM_QUIT)
+            if (msg.message == WM_QUIT)
                 break;
         }
 
         for (auto& widget_list : globals::widget_lists)
             widget_list.draw_widgets();
+
+        if (GetAsyncKeyState(VK_INSERT) & 0x1)
+            globals::widget_lists.front().to_string();
 
         renderer.draw();
 
@@ -59,7 +77,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     renderer.cleanup();
 }
 
-int main()
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-
+    main();
 }

@@ -4,9 +4,9 @@
 // owned widget definitions
 //
 
-owned_widget::owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx) :
-	p_wdgt(std::move(p_wdgt)),	
-	owned_styles_idx(owned_styles_idx)
+owned_widget::owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx) 
+	: p_wdgt(std::move(p_wdgt))
+	, owned_styles_idx(owned_styles_idx)
 { }
 
 //
@@ -49,15 +49,15 @@ widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& 
 	input_msgs()
 { }
 
-widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, std::vector<owned_widget>& owned_widgets, std::vector<std::unique_ptr<style>>& owned_styles) :
+widget_list::widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, std::vector<owned_widget> owned_widgets_, std::vector<std::unique_ptr<style>> owned_styles_) :
 	top_left(top_left),
 	size(size),
 	background(background),
 	active(true),
 	move_mode(false),
 	widgets(),
-	owned_widgets(std::move(owned_widgets)),
-	owned_styles(std::move(owned_styles)),
+	owned_widgets(std::move(owned_widgets_)),
+	owned_styles(std::move(owned_styles_)),
 	input_msgs()
 { 
 	for (auto& owned_widget : this->owned_widgets)
@@ -125,7 +125,7 @@ void widget_list::draw_widgets()
 
     widget::p_renderer->add_rect_filled_multicolor(top_left, size, background.tl_clr, background.tr_clr, background.bl_clr, background.br_clr);
 
-	for (auto widget : widgets)
+	for (auto& widget : widgets)
 		widget->draw();
 }
 
@@ -217,13 +217,13 @@ std::string widget_list::to_string()
 		if (iterator == styles_to_save.end())
 		{
 			styles_to_save.push_back(w->p_style);
-			style_idx = styles_to_save.size() - 1; // index is last added
+			style_idx = static_cast<uint32_t>(styles_to_save.size() - 1); // index is last added
 			styles_str += (styles_str.empty() ? "\n" : ",\n") + w->p_style->to_string(3);
 		}
 		else
-			style_idx = std::distance(styles_to_save.begin(), iterator);
+			style_idx = static_cast<uint32_t>(std::distance(styles_to_save.begin(), iterator));
 	
-		widgets_str += "\t\towned_widget\n\t\t{\nstd::make_unique<widget>(\n" + w->to_string(4) + ", " + std::to_string(style_idx) + "/*owned_widget style index*/\n\t\t}" +
+		widgets_str += "\t\towned_widget\n\t\t{\nstd::make_unique<widget>(\n" + w->to_string(4) + ", " + std::to_string(style_idx) + "/*owned_widget style*/ index\n\t\t}" +
 			(w == widgets.back() ? "" : ",") + "\n";
 	}
 	

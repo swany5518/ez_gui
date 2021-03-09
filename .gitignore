@@ -44,3 +44,6 @@
 *.txt
 *.exp
 *.ilk
+*.enc
+*.iobj
+*.ipdb

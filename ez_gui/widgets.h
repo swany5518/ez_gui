@@ -63,6 +63,8 @@ struct widget
 	}
 
 	widget() = delete;
+	widget(const widget&) = delete;
+	widget(widget&&) = default;
 	widget(const vec2& top_left, const vec2& size, const std::wstring& label);
 	widget(const vec2& top_left, const vec2& size, const std::wstring& label, style* p_style);
 	widget(const vec2& top_left, const vec2& size, const std::wstring& label, const vec2& label_pos);
@@ -101,8 +103,8 @@ struct checkbox : widget
 	checkbox(const vec2& top_left, const vec2& size, const std::wstring& label, bool* value, checkbox_style* style);
 	checkbox(const vec2& top_left, const vec2& size, const std::wstring& label, const vec2& label_pos, bool* value, checkbox_style* style);
 	void on_lbutton_up(const vec2& mouse_position);
-	void draw();
-	widget_type get_type();
+	void draw() override;
+	widget_type get_type() override;
 
 	std::string to_string(uint16_t indent_amt);
 };
@@ -113,11 +115,11 @@ struct button : widget
 	button() = delete;
 	button(const vec2& top_left, const vec2& size, const std::wstring& label, button_style* style);
 	button(const vec2& top_left, const vec2& size, const std::wstring& label, const vec2& label_pos, button_style* style);
-	void draw();
+	void draw() override;
 
-	widget_type get_type();
+	widget_type get_type() override;
 
-	std::string to_string(uint16_t indent_amt);
+	std::string to_string(uint16_t indent_amt) override;
 };
 
 // simple slider widget for floating point and integer types
@@ -134,14 +136,12 @@ struct slider : widget
 		min_value(min),
 		max_value(max)
 	{ }
-
 	slider(const vec2& top_left, const vec2& size, const std::wstring& label, Ty min, Ty max, slider_style* style) :
 		widget(top_left, size, label, style),
 		value(nullptr),
 		min_value(min),
 		max_value(max)
 	{ }
-
 	slider(const vec2& top_left, const vec2& size, const std::wstring& label, const vec2& label_pos, Ty* value, Ty min, Ty max, slider_style* style) :
 		widget(top_left, size, label, label_pos, style),
 		value(value),
@@ -158,8 +158,7 @@ struct slider : widget
 	{
 		value = p_value;
 	}
-
-	void on_lbutton_down(const vec2& mouse_position)
+	void on_lbutton_down(const vec2& mouse_position) override
 	{
 		mouse_info.clicking = 1;
 		mouse_info.clicked = 0;
@@ -176,8 +175,7 @@ struct slider : widget
 				*value = static_cast<Ty>(get_range() * ratio + min_value);
 		}
 	}
-
-	void on_drag(const vec2& new_position)
+	void on_drag(const vec2& new_position) override
 	{
 		// ratio is the clamped offset of the new position relative to the top_left.x / the slider's size.x
 		float ratio = std::clamp<float>(new_position.x - top_left.x, 0.f, size.x) / size.x;
@@ -187,8 +185,7 @@ struct slider : widget
 		else if (std::is_floating_point_v<Ty>)
 			*value = static_cast<Ty>(get_range() * ratio + min_value);
 	}
-
-	void draw()
+	void draw() override
 	{
 		auto style = static_cast<slider_style*>(p_style);
 		// calculate the slider width
@@ -207,12 +204,11 @@ struct slider : widget
 		p_renderer->add_outlined_text_with_bg(top_left + label_pos, size, label, style->text.clr, style->text.ol_clr, style->text.bg_clr, style->text.size, style->text.ol_thckns);
 	}
 
-	widget_type get_type()
+	widget_type get_type() override
 	{
 		return widget_type::slider;
 	}
-
-	std::string to_string(uint16_t indent_amt)
+	std::string to_string(uint16_t indent_amt) override
 	{
 		std::string ty_type{};
 
@@ -247,11 +243,11 @@ struct text_entry : widget
 	text_entry(const vec2& top_left, const vec2& size, const std::wstring& label, const vec2& label_pos, text_entry_style* style, uint32_t max_buffer_size = 128u, const vec2& buffer_offset = { 0.f, 0.f });
 	
 	void on_key_down(char key);
-	void draw();
+	void draw() override;
 
-	widget_type get_type();
+	widget_type get_type() override;
 
-	std::string to_string(uint16_t indent_amt);
+	std::string to_string(uint16_t indent_amt) override;
 };
 
 // widget commonly used to place multiple grouped widgets inside
@@ -261,11 +257,11 @@ struct combo_box : widget
 
 	combo_box(const vec2& top_left, const vec2& size, const std::wstring& label, const vec2& label_pos, combo_box_style* style);
 
-	void draw();
+	void draw() override;
 
-	widget_type get_type();
+	widget_type get_type() override;
 
-	std::string to_string(uint16_t indent_amt);
+	std::string to_string(uint16_t indent_amt) override;
 };
 
 // edit a color with rgba sliders
@@ -293,12 +289,36 @@ struct color_picker : widget
 	// check if a relative click is in any 4 of the rgba sliders, if so return the index of which one, else return -1
 	int slider_click_index(const vec2& relative_mouse_pos) const;
 
-	void on_lbutton_down(const vec2& mouse_position);
-	void on_lbutton_up(const vec2& mouse_position);
-	void on_drag(const vec2& new_position);
-	void draw();
+	void on_lbutton_down(const vec2& mouse_position) override;
+	void on_lbutton_up(const vec2& mouse_position) override;
+	void on_drag(const vec2& new_position) override;
+	void draw() override;
 
-	widget_type get_type();
+	widget_type get_type() override;
 
-	std::string to_string(uint16_t indent_amt);
+	std::string to_string(uint16_t indent_amt) override;
+};
+
+// more advanded html style picker
+struct color_editor : widget
+{
+	color* p_color;
+	float slider_pct;
+	float alpha_pct;
+
+	color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color_editor_style* style);
+	color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color* p_color, color_editor_style* style);
+
+	color get_sldr_clr(float pct) const;
+	vec2 get_clr_sldr_tl() const; // get relative position of the color slider
+	vec2 get_clr_sldr_size() const; // get size of the color slider
+
+	vec2 get_alpha_sldr_tl() const;
+	vec2 get_alpha_sldr_size() const;
+
+	void on_lbutton_down(const vec2& mouse_pos) override;
+	void on_drag(const vec2& new_position) override;
+	void draw() override;
+
+	widget_type get_type() const;
 };

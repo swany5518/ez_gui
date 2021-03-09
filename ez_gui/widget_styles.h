@@ -155,3 +155,15 @@ struct color_picker_style : style
 	bool operator==(const color_picker_style&) const;
 	bool operator!=(const color_picker_style&) const;
 } inline default_color_picker_style{};
+
+struct color_editor_style : style
+{
+	text_style text;
+	border_style border;
+	mc_rect bg;
+
+	color_editor_style();
+	color_editor_style(const text_style& text, const border_style& border, const mc_rect& bg);
+
+	std::string to_string(uint16_t indent_amt = 1) const;
+};

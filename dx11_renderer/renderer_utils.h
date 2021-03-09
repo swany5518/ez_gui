@@ -13,35 +13,26 @@ struct vec2
 	float x, y;
 
 	vec2();
-
+	vec2(float xy);
 	vec2(float x, float y);
-
 	vec2(int x, int y);
 
 	bool operator==(const vec2& other) const;
-
 	vec2 operator-(float amount) const;
-
 	vec2 operator-(const vec2& other) const;
-
 	vec2 operator+(float amount) const;
-
 	vec2 operator+(const vec2& other) const;
-
 	vec2 operator/(const vec2& other) const;
-
 	vec2 operator/(float amount) const;
-
 	vec2 operator*(float amount) const;
-
 	vec2 operator*(const vec2& other) const;
 
 	std::string to_string() const;
 
 	// higher y corresponds to a smaller x value
 	bool higher_or_leftmost(const vec2& other) const;
-
 	bool rightmost_or_higher(const vec2& other) const;
+	bool is_inside(const vec2& top_left, const vec2& size) const;
 };
 
 // struct for 3d position
@@ -81,10 +72,15 @@ namespace colors
 	const inline color white{ 1.f, 1.f, 1.f, 1.f };
 	const inline color black{ 0.f, 0.f, 0.f, 1.f };
 	const inline color gray{ .5f, .5f, .5f, 1.f };
+
 	const inline color red{ 1.f, 0.f, 0.f, 1.f };
 	const inline color green{ 0.f, 1.f, 0.f, 1.f };
 	const inline color blue{ 0.f, 0.f, 1.f, 1.f };
+
+	const inline color yellow{ 1.f, 1.f, 0.f, 1.f };
 	const inline color purple{ 1.f, 0.f, 1.f, 1.f };
+	const inline color cyan{ 0.f, 1.f, 1.f, 1.f };
+	
 };
 
 // text formatting flags

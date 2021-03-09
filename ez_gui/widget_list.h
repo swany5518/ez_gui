@@ -17,10 +17,10 @@
 struct owned_widget
 {
     std::unique_ptr<widget> p_wdgt;
-	uint32_t owned_styles_idx;          // the index the widget will have in the onwed styles list
+	uint32_t owned_styles_idx;          // the index the widget will have in the owned styles list
 
-	owned_widget() = delete;
-	owned_widget(const owned_widget& ) = delete;
+    owned_widget(const owned_widget&) = delete;
+    owned_widget(owned_widget&&) = default;
     owned_widget(std::unique_ptr<widget> p_wdgt, uint32_t owned_styles_idx);
 };
 
@@ -28,10 +28,11 @@ class widget_list
 {
 public:
 	widget_list();
+    widget_list(const widget_list&) = delete;
+    widget_list(widget_list&&) = default;
 	widget_list(const vec2& top_left, const vec2& size);
 	widget_list(const vec2& top_left, const vec2& size, const mc_rect& background);
-	widget_list(const widget_list& other) = delete;
-	widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, std::vector<owned_widget>& owned_widgets, std::vector<std::unique_ptr<style>>& owned_styles);
+	widget_list(const vec2& top_left, const vec2& size, const mc_rect& background, std::vector<owned_widget> owned_widgets, std::vector<std::unique_ptr<style>> owned_styles);
 
 	// add a single widget to the widget list
 	void add_widget(widget* p_widget);
@@ -76,10 +77,10 @@ private:
 	bool active;						  // if a widget list is active, the widgets will be drawn and inputs will be pushed into the queue, if not, it is "invisible"
 	bool move_mode;						  // if move mode is true, widgets in the list can be dragged around for repositioning
 
-	std::vector<widget*> widgets;				// vector of widget ptrs the list contains
-	std::vector<owned_widget> owned_widgets;    // vector of widgets this instance owns
-	std::vector<std::unique_ptr<style>> owned_styles;		    // vector of styles this instance owns, must be heap allocated to avoid object slicing
-	std::queue<widget_input> input_msgs;		// input message queue
+	std::vector<widget*> widgets;				       // vector of widget ptrs the list contains
+	std::vector<owned_widget> owned_widgets;           // vector of widgets this instance owns
+	std::vector<std::unique_ptr<style>> owned_styles;  // vector of styles this instance owns, must be heap allocated to avoid object slicing
+	std::queue<widget_input> input_msgs;		       // input message queue
 
 	// handle next input message in the queue, if no messages are present, the function just returns, called in draw_widgets() before drawing
 	void handle_next_input();
@@ -136,8 +137,9 @@ namespace globals
 	}
 
 }
+
 // retrieve a list needed to draw editing widgets for a given slider_style ptr
-inline static widget_list get_slider_style_edit_list(slider_style* p_slider_style)
+inline static widget_list get_slider_style_edit_list(slider_style* p_slider_style) // ignore the really long name this is temporary
 {
     /*
 	// create static widgets once to construct widget_list with, then replace ptr's with passed slider_style*
@@ -209,226 +211,228 @@ inline static widget_list get_slider_style_edit_list(slider_style* p_slider_styl
 
 	return list;*/
 
-    std::vector<owned_widget> owned_widgets{
-                owned_widget
-                {
-                        std::make_unique<widget>(slider<float>{
-                                vec2{ 156.000000f, 102.000000f }, vec2{ 150.000000f, 20.000000f },
-                                L"text_size", vec2{ 150.000000f, 0.000000f },
-                                &p_slider_style->text.size, 6.000000, 50.000000, nullptr
-                        }), 0/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(slider<float>
-                        {
-                                { 155.000000f, 143.000000f }, { 150.000000f, 20.000000f },
-                                L"text ol thckns",{ 150.000000f, 0.000000f },
-                                 &p_slider_style->text.ol_thckns,0.000000,5.000000, nullptr
-                        }), 0/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 3.000000f, 3.000000f }, { 150.000000f, 80.000000f },
-                                L"text color", { 150.000000f, 0.000000f }, &p_slider_style->text.clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 156.000000f, 3.000000f }, { 150.000000f, 80.000000f },
-                                L"text ol color", { 150.000000f, 0.000000f }, &p_slider_style->text.ol_clr, nullptr
+    std::vector<owned_widget> owned_widgets{};
 
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 3.000000f, 85.000000f }, { 150.000000f, 80.000000f },
-                                L"text bg color", { 150.000000f, 0.000000f },&p_slider_style->text.bg_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(slider<float>
-                        {
-                                { 3.000000f, 189.000000f }, { 150.000000f, 20.000000f },
-                                L"border thckns",{ 150.000000f, 0.000000f },
-                                &p_slider_style->border.thckns,0.000000,5.000000, nullptr
-                        }), 0/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(slider<float>
-                        {
-                                { 3.000000f, 167.000000f }, { 150.000000f, 20.000000f },
-                                L"border ol thickness",{ 150.000000f, 0.000000f },
-                                & p_slider_style->border.ol_thckns,0.000000,5.000000, nullptr
-                        }), 0/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 3.000000f, 211.000000f }, { 150.000000f, 80.000000f },
-                                L"border color", { 150.000000f, 0.000000f }, &p_slider_style->border.clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 156.000000f, 211.000000f }, { 150.000000f, 80.000000f },
-                                L"border ol color", { 150.000000f, 0.000000f }, &p_slider_style->border.ol_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 3.000000f, 295.000000f }, { 150.000000f, 80.000000f },
-                                L"bg top left", { 150.000000f, 0.000000f }, &p_slider_style->bg.tl_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 157.000000f, 295.000000f }, { 150.000000f, 80.000000f },
-                                L"bg top right", { 150.000000f, 0.000000f }, &p_slider_style->bg.tr_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 4.000000f, 379.000000f }, { 150.000000f, 80.000000f },
-                                L"bg btm left", { 150.000000f, 0.000000f }, &p_slider_style->bg.bl_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 158.000000f, 380.000000f }, { 150.000000f, 80.000000f },
-                                L"bg btm right", { 150.000000f, 0.000000f }, &p_slider_style->bg.br_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 2.000000f, 465.000000f }, { 150.000000f, 80.000000f },
-                                L"slide top left", { 150.000000f, 0.000000f }, &p_slider_style->clr.tl_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 157.000000f, 465.000000f }, { 150.000000f, 80.000000f },
-                                L"slide top right", { 150.000000f, 0.000000f }, &p_slider_style->clr.tr_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 2.000000f, 550.000000f }, { 150.000000f, 80.000000f },
-                                L"slide btm left", { 150.000000f, 0.000000f }, &p_slider_style->clr.bl_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                },
-                owned_widget
-                {
-                        std::make_unique<widget>(color_picker
-                        {
-                                { 157.000000f, 550.000000f }, { 150.000000f, 80.000000f },
-                                L"slide btm right", { 150.000000f, 0.000000f }, &p_slider_style->clr.br_clr, nullptr
-                        }), 1/*owned_widget style index*/
-                }
-            };
-
-            std::vector<std::unique_ptr<style>> owned_styles
+    owned_widgets.emplace_back(
+        std::make_unique<slider<float>>(
+            vec2{ 156.000000f, 102.000000f }, 
+            vec2{ 150.000000f, 20.000000f },
+            L"text_size", 
+            vec2{ 150.000000f, 0.000000f },
+            &p_slider_style->text.size, 
+            6.000000, 
+            50.000000, 
+            nullptr
+        ), 
+        0/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<slider<float>>(
+            vec2{ 155.000000f, 143.000000f }, 
+            vec2{ 150.000000f, 20.000000f },
+            L"text ol thckns",
+            vec2{ 150.000000f, 0.000000f },
+            &p_slider_style->text.ol_thckns,
+            0.000000,
+            5.000000,
+            nullptr
+        ),
+        0/*owned_widget style index*/  
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+            vec2{ 3.000000f, 3.000000f }, vec2{ 150.000000f, 80.000000f },
+            L"text color", vec2{ 150.000000f, 0.000000f }, &p_slider_style->text.clr, nullptr
+        ), 
+        1/*owned_widget style index*/ 
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+            vec2{ 156.000000f, 3.000000f }, vec2{ 150.000000f, 80.000000f },
+            L"text ol color", vec2{ 150.000000f, 0.000000f }, &p_slider_style->text.ol_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        
+        std::make_unique<color_picker>(
+            vec2{ 3.000000f, 85.000000f }, vec2{ 150.000000f, 80.000000f },
+            L"text bg color", vec2{ 150.000000f, 0.000000f },&p_slider_style->text.bg_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+        
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<slider<float>>(
+                vec2{ 3.000000f, 189.000000f }, vec2{ 150.000000f, 20.000000f },
+                L"border thckns",vec2{ 150.000000f, 0.000000f },
+                & p_slider_style->border.thckns,0.000000,5.000000, nullptr
+        ), 0/*owned_widget style index*/
+        
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<slider<float>>(
+            vec2{ 3.000000f, 167.000000f }, 
+            vec2{ 150.000000f, 20.000000f },
+            L"border ol thickness",
+            vec2{ 150.000000f, 0.000000f },
+            &p_slider_style->border.ol_thckns,
+            0.000000,
+            5.000000, 
+            nullptr
+        ), 0/*owned_widget style index*/
+        
+    );
+    owned_widgets.emplace_back(  
+        std::make_unique<color_picker>(
+            vec2{ 3.000000f, 211.000000f }, vec2{ 150.000000f, 80.000000f },
+            L"border color", vec2{ 150.000000f, 0.000000f }, &p_slider_style->border.clr, nullptr
+        ), 1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+                vec2{ 156.000000f, 211.000000f }, vec2{ 150.000000f, 80.000000f },
+                L"border ol color", vec2{ 150.000000f, 0.000000f }, &p_slider_style->border.ol_clr, nullptr
+        ), 1/*owned_widget style index*/   
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+            vec2{ 3.000000f, 295.000000f },  vec2{ 150.000000f, 80.000000f },
+            L"bg top left",  vec2{ 150.000000f, 0.000000f }, &p_slider_style->bg.tl_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+            vec2{ 157.000000f, 295.000000f }, vec2{ 150.000000f, 80.000000f },
+            L"bg top right",  vec2{ 150.000000f, 0.000000f }, &p_slider_style->bg.tr_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+                
+            vec2{ 4.000000f, 379.000000f }, vec2{ 150.000000f, 80.000000f },
+                L"bg btm left", vec2{ 150.000000f, 0.000000f }, &p_slider_style->bg.bl_clr, nullptr
+        ), 1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+                
+            vec2{ 158.000000f, 380.000000f }, vec2{ 150.000000f, 80.000000f },
+                L"bg btm right", vec2{ 150.000000f, 0.000000f }, &p_slider_style->bg.br_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+                
+            vec2{ 2.000000f, 465.000000f }, vec2{ 150.000000f, 80.000000f },
+                L"slide top left", vec2{ 150.000000f, 0.000000f }, &p_slider_style->clr.tl_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+                
+                vec2{ 157.000000f, 465.000000f }, vec2{ 150.000000f, 80.000000f },
+                L"slide top right", vec2{ 150.000000f, 0.000000f }, &p_slider_style->clr.tr_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+                
+                vec2{ 2.000000f, 550.000000f }, vec2{ 150.000000f, 80.000000f },
+                L"slide btm left", vec2{ 150.000000f, 0.000000f }, &p_slider_style->clr.bl_clr, nullptr
+        ), 
+        1/*owned_widget style index*/
+    );
+    owned_widgets.emplace_back(
+        std::make_unique<color_picker>(
+            vec2{ 157.000000f, 550.000000f },
+            vec2{ 150.000000f, 80.000000f },
+            L"slide btm right",
+            vec2{ 150.000000f, 0.000000f },
+            &p_slider_style->clr.br_clr,
+            nullptr
+        ), 1/*owned_widget style index*/
+        
+    );
+    
+    std::vector<std::unique_ptr<style>> owned_styles{};
+    
+    owned_styles.emplace_back(
+        std::make_unique<slider_style>(
+            text_style
             {
-                std::make_unique<style>(slider_style
-                    {
-                            text_style
-                            {
-                                    14.000000, 1.000000,
-                                    { 1.000000, 1.000000, 1.000000, 1.000000 },
-                                    { 0.000000, 0.000000, 0.000000, 1.000000 },
-                                    { 0.000000, 0.000000, 0.000000, 0.000000 }
-                            },
-                            border_style
-                            {
-                                    2.000000, 0.000000,
-                                    { 0.000000, 0.000000, 0.000000, 1.000000 },
-                                    { 0.000000, 0.000000, 0.000000, 0.000000 }
-                            },
-                            mc_rect
-                            {
-                                    { 0.000000, 0.000000, 0.000000, 0.000000 },
-                                    { 0.000000, 0.000000, 0.000000, 0.000000 },
-                                    { 0.000000, 0.000000, 0.000000, 0.000000 },
-                                    { 0.000000, 0.000000, 0.000000, 0.000000 }
-                            },
-                            mc_rect
-                            {
-                                    { 1.000000, 1.000000, 1.000000, 1.000000 },
-                                    { 1.000000, 1.000000, 1.000000, 1.000000 },
-                                    { 1.000000, 1.000000, 1.000000, 1.000000 },
-                                    { 1.000000, 1.000000, 1.000000, 1.000000 }
-                            }
-                    }),
-                    std::make_unique<style>(color_picker_style
-                        {
-                                text_style
-                                {
-                                        14.000000, 1.000000,
-                                        { 1.000000, 1.000000, 1.000000, 1.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 1.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 }
-                                },
-                                border_style
-                                {
-                                        2.000000, 0.000000,
-                                        { 0.000000, 0.000000, 0.000000, 1.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 }
-                                },
-                                mc_rect
-                                {
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 }
-                                },
-                                border_style
-                                {
-                                        2.000000, 0.000000,
-                                        { 0.000000, 0.000000, 0.000000, 1.000000 },
-                                        { 0.000000, 0.000000, 0.000000, 0.000000 }
-                                },
-                                3.000000
-                        })
-            };
-
-
-
-    return widget_list(
-            vec2{ 0.000000f, 0.000000f },
-            vec2{ 1000.000000f, 1000.000000f },
+                14.000000, 1.000000,
+                { 1.000000, 1.000000, 1.000000, 1.000000 },
+                { 0.000000, 0.000000, 0.000000, 1.000000 },
+                { 0.000000, 0.000000, 0.000000, 0.000000 }
+            },
+            border_style
+            {
+                2.000000, 0.000000,
+                { 0.000000, 0.000000, 0.000000, 1.000000 },
+                { 0.000000, 0.000000, 0.000000, 0.000000 }
+            },
             mc_rect
             {
-                    { 0.000000, 0.000000, 0.000000, 1.000000 },
-                    { 0.000000, 0.000000, 0.000000, 1.000000 },
-                    { 0.000000, 0.000000, 0.000000, 1.000000 },
-                    { 0.000000, 0.000000, 0.000000, 1.000000 }
+                { 0.000000, 0.000000, 0.000000, 0.000000 },
+                { 0.000000, 0.000000, 0.000000, 0.000000 },
+                { 0.000000, 0.000000, 0.000000, 0.000000 },
+                { 0.000000, 0.000000, 0.000000, 0.000000 }
             },
-            owned_widgets,
-            owned_styles
+            mc_rect
+            {
+                { 1.000000, 1.000000, 1.000000, 1.000000 },
+                { 1.000000, 1.000000, 1.000000, 1.000000 },
+                { 1.000000, 1.000000, 1.000000, 1.000000 },
+                { 1.000000, 1.000000, 1.000000, 1.000000 }
+            }
+        )
+    );
+    owned_styles.emplace_back(
+        std::make_unique<color_picker_style>(
+            text_style
+            {
+                    14.000000, 1.000000,
+                    { 1.000000, 1.000000, 1.000000, 1.000000 },
+                    { 0.000000, 0.000000, 0.000000, 1.000000 },
+                    { 0.000000, 0.000000, 0.000000, 0.000000 }
+            },
+            border_style
+            {
+                    2.000000, 0.000000,
+                    { 0.000000, 0.000000, 0.000000, 1.000000 },
+                    { 0.000000, 0.000000, 0.000000, 0.000000 }
+            },
+            mc_rect
+            {
+                    { 0.000000, 0.000000, 0.000000, 0.000000 },
+                    { 0.000000, 0.000000, 0.000000, 0.000000 },
+                    { 0.000000, 0.000000, 0.000000, 0.000000 },
+                    { 0.000000, 0.000000, 0.000000, 0.000000 }
+            },
+            border_style
+            {
+                    2.000000, 0.000000,
+                    { 0.000000, 0.000000, 0.000000, 1.000000 },
+                    { 0.000000, 0.000000, 0.000000, 0.000000 }
+            },
+            3.000000
+        )
+    );
+    
+    return widget_list(
+        vec2{ 0.000000f, 0.000000f },
+        vec2{ 1000.000000f, 1000.000000f },
+        mc_rect
+        {
+            {0.25f}
+        },
+        std::move(owned_widgets),
+        std::move(owned_styles)
     );
 }

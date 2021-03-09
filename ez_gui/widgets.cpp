@@ -63,7 +63,9 @@ vec2 widget::relative_position(const vec2& pos)
 }
 
 void widget::draw() 
-{ }
+{ 
+	std::cout << "base draw called" << std::endl;
+}
 
 void widget::on_lbutton_down(const vec2& mouse_position)
 {
@@ -337,7 +339,7 @@ color_picker::color_picker(const vec2& top_left, const vec2& size, const std::ws
 	active_slider_index(-1),
 	rgba_slider_size()
 {
-	instance_count++;
+	++instance_count;
 	calc_pos_and_sizes();
 }
 
@@ -401,7 +403,6 @@ void color_picker::on_lbutton_down(const vec2& mouse_position)
 		{
 			float ratio = (relative.x - rgba_slider_pos[active_slider_index].x) / rgba_slider_size.x;
 			(*p_color)[active_slider_index] = ratio;
-
 		}
 	}
 }
@@ -419,7 +420,7 @@ void color_picker::on_drag(const vec2& new_position)
 	if (p_color == nullptr)
 		return;
 
-	if (active )
+	if (active)
 	{
 		// check if relative click is inside any slider
 		auto relative = new_position - top_left;
@@ -504,4 +505,202 @@ std::string color_picker::to_string(uint16_t indent_amt)
 		tab_str + top_left.to_string() + ", " + size.to_string() + ",\n" +
 		tab_str + "L\"" + std::string(label.begin(), label.end()) + "\", " + label_pos.to_string() + ", /*COLOR PTR HERE*/nullptr, nullptr\n" +
 		brace_str + '}';
+}
+
+//
+// color editor definitions
+//
+
+color_editor::color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color_editor_style* style)
+	: widget(top_left, size, label, style)
+{ }
+
+color_editor::color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color* p_color, color_editor_style* style)
+	: widget(top_left, size, label, style)
+	, p_color(p_color)
+{ }
+
+color color_editor::get_sldr_clr(float pct) const
+{
+	constexpr float one_sixth   = 1.f / 6.f;
+	constexpr float two_sixth   = 2.f / 6.f;
+	constexpr float three_sixth = 3.f / 6.f;
+	constexpr float four_sixth  = 4.f / 6.f;
+	constexpr float five_sixth  = 5.f / 6.f;
+
+	color clr{ 0.f, 0.f, 0.f, 1.f };
+
+	if (pct <= one_sixth)
+	{
+		clr.r = 1.f;
+		clr.g = pct / one_sixth;
+	}
+	else if (pct <= two_sixth)
+	{
+		clr.r = 1.f - (pct - one_sixth) / one_sixth;
+		clr.g = 1.f;
+	}
+	else if (pct <= three_sixth)
+	{
+		clr.g = 1.f;
+		clr.b = (pct - two_sixth) / one_sixth;
+	}
+	else if (pct <= four_sixth)
+	{
+		clr.g = 1.f - (pct - three_sixth) / one_sixth;
+		clr.b = 1.f;
+	}
+	else if (pct <= five_sixth)
+	{
+		clr.r = (pct - four_sixth) / one_sixth;
+		clr.b = 1.f;
+	}
+	else if (pct <= 1.f) // yes this is reduntant
+	{
+		clr.r = 1.f;
+		clr.b = 1.f - (pct - five_sixth) / one_sixth;
+	}
+
+	return clr;
+}
+
+vec2 color_editor::get_clr_sldr_tl() const
+{
+	return vec2{ 0.f, size.y - size.y * .1f };
+}
+
+vec2 color_editor::get_clr_sldr_size() const
+{
+	return { size.x, size.y * .1f };
+}
+
+vec2 color_editor::get_alpha_sldr_tl() const
+{
+	return { size.x - size.y * .1f, 0.f };
+}
+
+vec2 color_editor::get_alpha_sldr_size() const
+{
+	return { size.y * .1f, size.y - size.y * .1f };
+}
+
+void color_editor::on_lbutton_down(const vec2& mouse_pos) 
+{
+	mouse_info.clicking = true;
+	mouse_info.clicked = false;
+	mouse_info.hovering = false;
+	mouse_info.click_origin = relative_position(mouse_pos);
+
+	const auto clr_sldr_size = get_clr_sldr_size();
+	const auto clr_sldr_tl = get_clr_sldr_tl();
+
+	const auto alpha_sldr_size = get_alpha_sldr_size();
+	const auto alpha_sldr_tl = get_alpha_sldr_tl();
+
+	color new_clr = *p_color;
+
+	// check if new position is inside color slider
+	if (mouse_info.click_origin.is_inside(clr_sldr_tl, clr_sldr_size))
+	{
+		slider_pct = (mouse_info.click_origin.x - clr_sldr_tl.x) / clr_sldr_size.x;
+		new_clr = get_sldr_clr(slider_pct);
+	}
+	// check if new position is inside alpha slider
+	else if (mouse_info.click_origin.is_inside(alpha_sldr_tl, alpha_sldr_size))
+	{
+		alpha_pct = 1.f - std::clamp<float>(mouse_info.click_origin.y - alpha_sldr_tl.y, 0.f, alpha_sldr_size.y) / alpha_sldr_size.y;
+		new_clr.a = alpha_pct;
+	}
+}
+
+void color_editor::on_drag(const vec2& new_position)
+{
+	const auto relative_pos = new_position - top_left;
+
+	const auto clr_sldr_size = get_clr_sldr_size();
+	const auto clr_sldr_tl = get_clr_sldr_tl();
+
+	const auto alpha_sldr_size = get_alpha_sldr_size();
+	const auto alpha_sldr_tl = get_alpha_sldr_tl();
+
+	color new_clr = *p_color;
+
+	if (mouse_info.click_origin.is_inside(clr_sldr_tl, clr_sldr_size))
+	{
+		slider_pct = std::clamp<float>(relative_pos.x - clr_sldr_tl.x, 0.f, clr_sldr_size.x) / clr_sldr_size.x;
+		new_clr = get_sldr_clr(slider_pct);
+		new_clr.a = alpha_pct;
+	}
+	else if (mouse_info.click_origin.is_inside(alpha_sldr_tl, alpha_sldr_size))
+	{
+		alpha_pct = 1.f - std::clamp<float>(relative_pos.y - alpha_sldr_tl.y, 0.f, alpha_sldr_size.y) / alpha_sldr_size.y;
+		new_clr.a = alpha_pct;
+	}
+
+	*p_color = new_clr;
+}
+
+void color_editor::draw()
+{
+	if (!p_style || !p_color)
+		return;
+
+	auto style = reinterpret_cast<color_editor_style*>(p_style);
+
+	const float triangle_size = 6.f;
+
+	// draw background
+	p_renderer->add_rect_filled_multicolor(top_left, size, style->bg.tl_clr, style->bg.tr_clr, style->bg.bl_clr, style->bg.br_clr);
+
+	// draw alpha slider
+	
+	const auto alpha_sldr_size = get_alpha_sldr_size();
+	const auto alpha_sldr_tl = get_alpha_sldr_tl() + top_left;
+
+	auto alpha_clr = *p_color;
+	auto alpha_clr2 = alpha_clr;
+	alpha_clr.a = 1.f;
+	alpha_clr2.a = 0.f;
+	p_renderer->add_rect_filled_multicolor(alpha_sldr_tl, alpha_sldr_size, alpha_clr, alpha_clr, alpha_clr2, alpha_clr2);
+
+	// draw alpha slider triangle markers
+	const float alpha_pct_y = (1.f - alpha_pct) * alpha_sldr_size.y;
+	const vec2 alph_p1{ alpha_sldr_tl.x, alpha_sldr_tl.y + alpha_pct_y + triangle_size };
+	const vec2 alph_p2{ alpha_sldr_tl.x, alpha_sldr_tl.y + alpha_pct_y - triangle_size };
+	const vec2 alph_p3{ alpha_sldr_tl.x + triangle_size, alpha_sldr_tl.y + alpha_pct_y };
+	const vec2 alph_p4{ alph_p1.x + alpha_sldr_size.x, alph_p1.y };
+	const vec2 alph_p5{ alph_p2.x + alpha_sldr_size.x, alph_p2.y };
+	const vec2 alph_p6{ alph_p3.x + alpha_sldr_size.x - triangle_size * 2.f, alph_p3.y };
+
+	p_renderer->add_triangle_filled(alph_p1, alph_p2, alph_p3, colors::black);
+	p_renderer->add_triangle_filled(alph_p4, alph_p5, alph_p6, colors::black);
+	
+	// draw rgb slider 
+	const auto clr_sldr_size = get_clr_sldr_size();
+	const auto clr_sldr_tl = get_clr_sldr_tl() + top_left;
+
+	auto width = size.x;
+	auto rect_w = width / 6.f;
+
+	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 0.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::red,    colors::yellow, colors::red,    colors::yellow);
+	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 1.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::yellow, colors::green,  colors::yellow, colors::green);
+	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 2.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::green,  colors::cyan,   colors::green,  colors::cyan);
+	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 3.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::cyan,   colors::blue,   colors::cyan,   colors::blue);
+	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 4.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::blue,   colors::purple, colors::blue,   colors::purple);
+	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 5.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::purple, colors::red,    colors::purple, colors::red);
+
+	// rgb slider triangle markers
+	const float sldr_pct_x = clr_sldr_size.x * slider_pct;
+	const vec2 tri_p1{ clr_sldr_tl.x + sldr_pct_x - triangle_size, clr_sldr_tl.y };
+	const vec2 tri_p2{ clr_sldr_tl.x + sldr_pct_x + triangle_size, clr_sldr_tl.y };
+	const vec2 tri_p3{ clr_sldr_tl.x + sldr_pct_x, clr_sldr_tl.y + triangle_size };
+	const vec2 tri_p4{ tri_p1.x, tri_p1.y + clr_sldr_size.y};
+	const vec2 tri_p5{ tri_p2.x, tri_p2.y + clr_sldr_size.y };
+	const vec2 tri_p6{ tri_p3.x, tri_p3.y + clr_sldr_size.y - triangle_size * 2.f };
+
+	p_renderer->add_triangle_filled(tri_p1, tri_p2, tri_p3, colors::black);
+	p_renderer->add_triangle_filled(tri_p4, tri_p5, tri_p6, colors::black);
+
+	// draw current color
+	p_renderer->add_rect_filled(top_left, {50}/*{ size.x, size.y - clr_sldr_size.y }*/, *p_color);
 }

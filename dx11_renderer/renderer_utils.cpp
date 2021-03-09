@@ -8,6 +8,10 @@ vec2::vec2() :
 	x(0.f), y(0.f)
 { }
 
+vec2::vec2(float xy) :
+	x(xy), y(xy)
+{ }
+
 vec2::vec2(float x, float y) :
 	x(x), y(y)
 { }
@@ -75,6 +79,14 @@ bool vec2::higher_or_leftmost(const vec2& other) const
 bool vec2::rightmost_or_higher(const vec2& other) const
 {
 	return x > other.x || x == other.x && y < other.y;
+}
+
+bool vec2::is_inside(const vec2& top_left, const vec2& size) const
+{
+	return x >= top_left.x 
+		&& y >= top_left.y 
+		&& x <= top_left.x + size.x 
+		&& y <= top_left.y + size.y;
 }
 
 //

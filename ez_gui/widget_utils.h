@@ -17,7 +17,8 @@ enum class widget_type
 	slider,
 	text_entry,
 	combo_box,
-	color_picker
+	color_picker,
+	color_editor
 };
 
 // enum class containing all mouse cursors 
