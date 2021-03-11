@@ -584,6 +584,16 @@ vec2 color_editor::get_alpha_sldr_size() const
 	return { size.y * .1f, size.y - size.y * .1f };
 }
 
+vec2 color_editor::get_hsv_tl() const
+{
+	return { 0.f, 0.f };
+}
+
+vec2 color_editor::get_hsv_size() const
+{
+	return size - (size.y * .1f);
+}
+
 void color_editor::on_lbutton_down(const vec2& mouse_pos) 
 {
 	mouse_info.clicking = true;
@@ -700,6 +710,15 @@ void color_editor::draw()
 
 	p_renderer->add_triangle_filled(tri_p1, tri_p2, tri_p3, colors::black);
 	p_renderer->add_triangle_filled(tri_p4, tri_p5, tri_p6, colors::black);
+
+	// draw hsv editor
+	const auto hsv_tl = get_hsv_tl() + top_left;
+	const auto hsv_size = get_hsv_size();
+	//const vec2 half_hsv{hsv_size.x / 2.f, hsv_size.y}
+
+	color temp{ p_color->r, p_color->g, p_color->b, 1.f };
+	p_renderer->add_rect_filled_multicolor(hsv_tl, hsv_size, colors::white, temp, colors::white, temp);
+	p_renderer->add_rect_filled_multicolor(hsv_tl, hsv_size, colors::clear, colors::clear, colors::black, colors::black);
 
 	// draw current color
 	p_renderer->add_rect_filled(top_left, {50}/*{ size.x, size.y - clr_sldr_size.y }*/, *p_color);

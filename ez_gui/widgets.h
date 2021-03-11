@@ -316,6 +316,9 @@ struct color_editor : widget
 	vec2 get_alpha_sldr_tl() const;
 	vec2 get_alpha_sldr_size() const;
 
+	vec2 get_hsv_tl() const;
+	vec2 get_hsv_size() const;
+
 	void on_lbutton_down(const vec2& mouse_pos) override;
 	void on_drag(const vec2& new_position) override;
 	void draw() override;
