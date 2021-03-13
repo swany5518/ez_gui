@@ -305,10 +305,13 @@ struct color_editor : widget
 	color* p_color;
 	float slider_pct;
 	float alpha_pct;
+	vec2 hsv_circle_pos;
 
 	color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color_editor_style* style);
 	color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color* p_color, color_editor_style* style);
 
+	color hsv_to_rgb(float h, float s, float v) const;
+	color rgb_to_hsv(const color& color) const;
 	color get_sldr_clr(float pct) const;
 	vec2 get_clr_sldr_tl() const; // get relative position of the color slider
 	vec2 get_clr_sldr_size() const; // get size of the color slider

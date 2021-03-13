@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cmath>
 
 #include "../FW1FontWrapper/Source/FW1FontWrapper.h"
 
@@ -33,6 +34,7 @@ struct vec2
 	bool higher_or_leftmost(const vec2& other) const;
 	bool rightmost_or_higher(const vec2& other) const;
 	bool is_inside(const vec2& top_left, const vec2& size) const;
+	vec2& clamp(const vec2& min, const vec2& max);
 };
 
 // struct for 3d position
@@ -46,6 +48,8 @@ struct vec3
 	std::string to_string() const;
 	
 };
+
+struct hsv;
 
 // struct for rgba colors
 struct color
@@ -63,7 +67,16 @@ struct color
 	// convert float 4 rgba to uint32 hex abgr
 	uint32_t to_hex_abgr() const;
 
+	hsv to_hsv() const;
+
 	std::string to_string() const;
+};
+
+struct hsv
+{
+	float h, s, v;
+
+	color to_rgb() const;
 };
 
 // namespace for preset colors

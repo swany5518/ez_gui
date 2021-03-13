@@ -89,6 +89,20 @@ bool vec2::is_inside(const vec2& top_left, const vec2& size) const
 		&& y <= top_left.y + size.y;
 }
 
+vec2& vec2::clamp(const vec2& min, const vec2& max)
+{
+	if (x < min.x)
+		x = min.x;
+	if (x > max.x)
+		x = max.x;
+	if (y < min.y)
+		y = min.y;
+	if (y > max.y)
+		y = max.y;
+
+	return *this;
+}
+
 //
 // vec3 definitions
 //
@@ -144,9 +158,114 @@ uint32_t color::to_hex_abgr() const
 	return hex;
 }
 
+hsv color::to_hsv() const
+{
+	hsv out{};
+	double min, max, delta;
+
+	min = r < g ? r : g;
+	min = min < b ? min : b;
+
+	max = r > g ? r : g;
+	max = max > b ? max : b;
+
+	out.v = max;                                // v
+	delta = max - min;
+	if (delta < 0.00001)
+	{
+		out.s = 0;
+		out.h = 0; // undefined, maybe nan?
+		return out;
+	}
+	if (max > 0.0) { // NOTE: if Max is == 0, this divide would cause a crash
+		out.s = (delta / max);                  // s
+	}
+	else {
+		// if max is 0, then r = g = b = 0              
+		// s = 0, h is undefined
+		out.s = 0.0;
+		out.h = NAN;                            // its now undefined
+		return out;
+	}
+	if (r >= max)                           // > is bogus, just keeps compilor happy
+		out.h = (g - b) / delta;        // between yellow & magenta
+	else
+		if (g >= max)
+			out.h = 2.0 + (b - r) / delta;  // between cyan & yellow
+		else
+			out.h = 4.0 + (r - g) / delta;  // between magenta & cyan
+
+	out.h *= 60.0;                              // degrees
+
+	if (out.h < 0.0)
+		out.h += 360.0;
+
+	return out;
+	
+}
+
 std::string color::to_string() const
 {
 	return "{ " + std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ", " + std::to_string(a) + " }";
+}
+
+//
+// hsv definitions
+//
+
+color hsv::to_rgb() const
+{
+	color rgba{};
+	if (s == 0.0f)
+	{
+		// gray
+		rgba.r = rgba.g = rgba.b = v;
+		return rgba;
+	}
+
+	float deg_h = std::fmodf(h, 1.0f) / (60.0f / 360.0f);
+	int   i = (int)deg_h;
+	float f = deg_h - (float)i;
+	float p = v * (1.0f - s);
+	float q = v * (1.0f - s * f);
+	float t = v * (1.0f - s * (1.0f - f));
+
+	switch (i)
+	{
+	case 0:
+		rgba.r = v;
+		rgba.g = t;
+		rgba.b = p;
+		break;
+	case 1:
+		rgba.r = q;
+		rgba.g = v;
+		rgba.b = p;
+		break;
+	case 2:
+		rgba.r = p;
+		rgba.g = v;
+		rgba.b = t;
+		break;
+	case 3:
+		rgba.r = p;
+		rgba.g = q;
+		rgba.b = v;
+		break;
+	case 4:
+		rgba.r = t;
+		rgba.g = p;
+		rgba.b = v;
+		break;
+	case 5:
+	default:
+		rgba.r = v;
+		rgba.g = p;
+		rgba.b = q;
+		break;
+	}
+
+	return rgba;
 }
 
 //

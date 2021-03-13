@@ -43,7 +43,7 @@ int main()
     float test_float = 20.f;
     slider<float> slider_test{ vec2{500.f, 100.f}, vec2{100.f, 20.f}, L"test slider", &test_float, 0.f, 100.f, &sldr_style_test };
 
-    color test_clr{1.f, 1.f, 1.f, 1.f};
+    color test_clr{0.f, 0.f, 1.f, 1.f};
     color_editor_style clr_edit_style{ {}, {}, {colors::gray} };
     color_editor editor{ {400.f, 500.f}, {300.f, 200.f}, L"editor", &test_clr, &clr_edit_style };
 
