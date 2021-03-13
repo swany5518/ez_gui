@@ -49,6 +49,14 @@ struct vec3
 	
 };
 
+struct region
+{
+	vec2 top_left;
+	vec2 size;
+
+	bool is_within(const vec2& pos) const;
+};
+
 struct hsv;
 
 // struct for rgba colors
@@ -70,6 +78,8 @@ struct color
 	hsv to_hsv() const;
 
 	std::string to_string() const;
+
+	static color get_from_hue(float hue);
 };
 
 struct hsv

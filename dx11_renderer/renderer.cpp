@@ -316,6 +316,46 @@ void renderer::add_circle(const vec2& middle, float radius, const color& color, 
 	add_vertices(vertices.data(), vertices.size(), D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
 }
 
+void renderer::add_clipped_circle(const region& region, const vec2& middle, float radius, const color& color, size_t segments)
+{
+	// segment count must be between 4 and MAX_DRAW_LIST_VERTICES
+	if (segments < 4 || segments > MAX_DRAW_LIST_VERTICES - 1)
+		handle_error("add_circle - need at least 4 and less than MAX_DRAW_LIST_VERTICES");
+
+	// store unit circle locations for circle resolutions(segments) to avoid calculating each add
+	static std::unordered_map<size_t, std::vector<vec2>> positions_cache{};
+
+	std::vector<vec2> positions{};
+
+	auto cached_positions = positions_cache.find(segments);
+
+	if (cached_positions == positions_cache.end())
+	{
+		for (auto i = 0u; i <= segments; ++i)
+		{
+			float theta = calc_theta(i, segments);
+			positions.emplace_back(cos(theta), sin(theta));
+		}
+
+		positions_cache[segments] = positions;
+	}
+
+	else
+		positions = cached_positions->second;
+
+	// might be a good idea to cache these later on
+	std::vector<vertex> vertices{};
+
+	for (auto& position : positions)
+	{
+		vec2 abs{ position.x * radius + middle.x, position.y * radius + middle.y };
+
+		vertices.emplace_back(abs, region.is_within(abs) ? color : colors::clear);
+	}
+
+	add_vertices(vertices.data(), vertices.size(), D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
+}
+
 void renderer::add_circle_filled(const vec2& middle, float radius, const color& color, size_t segments)
 {
 	// segment count must be between 4 and MAX_DRAW_LIST_VERTICES

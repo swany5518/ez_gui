@@ -97,6 +97,9 @@ public:
 	
 	// add a circle, more segments means smoother looking circle
 	void add_circle(const vec2& middle, float radius, const color& color, size_t segments);
+
+	// add a circle within a region, anything outside of the region will be invisible
+	void add_clipped_circle(const region& region, const vec2& middle, float radius, const color& color, size_t segments);
 	
 	// add a filled circle
 	void add_circle_filled(const vec2& middle, float radius, const color& box_color, size_t segments);

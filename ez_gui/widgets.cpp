@@ -515,64 +515,23 @@ color_editor::color_editor(const vec2& top_left, const vec2& size, const std::ws
 	: widget(top_left, size, label, style)
 	, slider_pct(0.f)
 	, alpha_pct(1.f)
-{ 
-	hsv_circle_pos = get_hsv_tl();
-	hsv_circle_pos.x += get_hsv_size().x;
-}
+	, hsv_val()
+{ }
 
 color_editor::color_editor(const vec2& top_left, const vec2& size, const std::wstring& label, color* p_color, color_editor_style* style)
 	: widget(top_left, size, label, style)
 	, p_color(p_color)
-{ 
-	auto hsv = p_color->to_hsv();
-	auto hsv_size = get_hsv_size();
-	hsv_circle_pos = { hsv.s * hsv_size.x, hsv_size.y - hsv.v * hsv_size.y };
-	slider_pct = hsv.h / 360.f;
+{
+	hsv_val = p_color->to_hsv();
 	alpha_pct = p_color->a;
 }
 
-color color_editor::get_sldr_clr(float pct) const
+void color_editor::update_color()
 {
-	constexpr float one_sixth   = 1.f / 6.f;
-	constexpr float two_sixth   = 2.f / 6.f;
-	constexpr float three_sixth = 3.f / 6.f;
-	constexpr float four_sixth  = 4.f / 6.f;
-	constexpr float five_sixth  = 5.f / 6.f;
+	auto temp = hsv_val.to_rgb();
+	temp.a = alpha_pct;
 
-	color clr{ 0.f, 0.f, 0.f, 1.f };
-
-	if (pct <= one_sixth)
-	{
-		clr.r = 1.f;
-		clr.g = pct / one_sixth;
-	}
-	else if (pct <= two_sixth)
-	{
-		clr.r = 1.f - (pct - one_sixth) / one_sixth;
-		clr.g = 1.f;
-	}
-	else if (pct <= three_sixth)
-	{
-		clr.g = 1.f;
-		clr.b = (pct - two_sixth) / one_sixth;
-	}
-	else if (pct <= four_sixth)
-	{
-		clr.g = 1.f - (pct - three_sixth) / one_sixth;
-		clr.b = 1.f;
-	}
-	else if (pct <= five_sixth)
-	{
-		clr.r = (pct - four_sixth) / one_sixth;
-		clr.b = 1.f;
-	}
-	else if (pct <= 1.f) // yes this is reduntant
-	{
-		clr.r = 1.f;
-		clr.b = 1.f - (pct - five_sixth) / one_sixth;
-	}
-
-	return clr;
+	*p_color = temp;
 }
 
 vec2 color_editor::get_clr_sldr_tl() const
@@ -605,66 +564,6 @@ vec2 color_editor::get_hsv_size() const
 	return size - (size.y * .1f);
 }
 
-color color_editor::hsv_to_rgb(float h, float s, float v) const
-{
-	color rgba{};
-	if (s == 0.0f)
-	{
-		// gray
-		rgba.r = rgba.g = rgba.b = v;
-		return rgba;
-	}
-
-	h = std::fmodf(h, 1.0f) / (60.0f / 360.0f);
-	int   i = (int)h;
-	float f = h - (float)i;
-	float p = v * (1.0f - s);
-	float q = v * (1.0f - s * f);
-	float t = v * (1.0f - s * (1.0f - f));
-
-	switch (i)
-	{
-	case 0: 
-		rgba.r = v; 
-		rgba.g = t; 
-		rgba.b = p; 
-		break;
-	case 1: 
-		rgba.r = q; 
-		rgba.g = v; 
-		rgba.b = p; 
-		break;
-	case 2: 
-		rgba.r = p; 
-		rgba.g = v; 
-		rgba.b = t; 
-		break;
-	case 3: 
-		rgba.r = p; 
-		rgba.g = q; 
-		rgba.b = v; 
-		break;
-	case 4: 
-		rgba.r = t; 
-		rgba.g = p; 
-		rgba.b = v; 
-		break;
-	case 5: 
-	default: 
-		rgba.r = v; 
-		rgba.g = p; 
-		rgba.b = q; 
-		break;
-	}
-
-	return rgba;
-}
-
-color color_editor::rgb_to_hsv(const color& color) const
-{
-	return {};
-}
-
 void color_editor::on_lbutton_down(const vec2& mouse_pos) 
 {
 	mouse_info.clicking = true;
@@ -678,30 +577,29 @@ void color_editor::on_lbutton_down(const vec2& mouse_pos)
 	const auto alpha_sldr_tl = get_alpha_sldr_tl();
 	const auto hsv_tl = get_hsv_tl();
 	const auto hsv_size = get_hsv_size();
-
-	color new_clr = *p_color;
+	bool value_changed = false;
 
 	// check if new position is inside color slider
 	if (mouse_info.click_origin.is_inside(clr_sldr_tl, clr_sldr_size))
 	{
-		slider_pct = (mouse_info.click_origin.x - clr_sldr_tl.x) / clr_sldr_size.x;
-		new_clr = get_sldr_clr(slider_pct);
+		hsv_val.h = std::clamp<float>((mouse_info.click_origin.x - clr_sldr_tl.x) / clr_sldr_size.x, 0.f, 1.f);
+		value_changed = true;
 	}
 	// check if new position is inside alpha slider
 	else if (mouse_info.click_origin.is_inside(alpha_sldr_tl, alpha_sldr_size))
 	{
 		alpha_pct = 1.f - std::clamp<float>(mouse_info.click_origin.y - alpha_sldr_tl.y, 0.f, alpha_sldr_size.y) / alpha_sldr_size.y;
-		new_clr.a = alpha_pct;
+		value_changed = true;
 	}
 	else if (mouse_info.click_origin.is_inside(hsv_tl, hsv_size))
 	{
-		hsv_circle_pos = (mouse_info.click_origin - hsv_tl).clamp(hsv_tl, hsv_tl + hsv_size);
-		hsv temp{ slider_pct, hsv_circle_pos.x / hsv_size.x, 1.f - hsv_circle_pos.y / hsv_size.y };
-		new_clr = temp.to_rgb();
-		new_clr.a = alpha_pct;
+		hsv_val.s = std::clamp<float>((mouse_info.click_origin.x - hsv_tl.x) / hsv_size.x, 0.f, 1.f);
+		hsv_val.v = 1.f - std::clamp<float>((mouse_info.click_origin.y - hsv_tl.y) / hsv_size.y, 0.f, 1.f);
+		value_changed = true;
 	}
 
-	*p_color = new_clr;
+	if (value_changed)
+		update_color();
 }
 
 void color_editor::on_drag(const vec2& new_position)
@@ -713,29 +611,29 @@ void color_editor::on_drag(const vec2& new_position)
 	const auto alpha_sldr_tl = get_alpha_sldr_tl();
 	const auto hsv_tl = get_hsv_tl();
 	const auto hsv_size = get_hsv_size();
+	bool value_changed = false;
 
-	color new_clr = *p_color;
-
+	// check if new position is inside color slider
 	if (mouse_info.click_origin.is_inside(clr_sldr_tl, clr_sldr_size))
 	{
-		slider_pct = std::clamp<float>(relative_pos.x - clr_sldr_tl.x, 0.f, clr_sldr_size.x) / clr_sldr_size.x;
-		new_clr = get_sldr_clr(slider_pct);
-		new_clr.a = alpha_pct;
+		hsv_val.h = std::clamp<float>((relative_pos.x - clr_sldr_tl.x) / clr_sldr_size.x, 0.f, 1.f);
+		value_changed = true;
 	}
+	// check if new position is inside alpha slider
 	else if (mouse_info.click_origin.is_inside(alpha_sldr_tl, alpha_sldr_size))
 	{
 		alpha_pct = 1.f - std::clamp<float>(relative_pos.y - alpha_sldr_tl.y, 0.f, alpha_sldr_size.y) / alpha_sldr_size.y;
-		new_clr.a = alpha_pct;
+		value_changed = true;
 	}
 	else if (mouse_info.click_origin.is_inside(hsv_tl, hsv_size))
 	{
-		hsv_circle_pos = (relative_pos - hsv_tl).clamp(hsv_tl, hsv_tl + hsv_size);
-		hsv temp{ slider_pct, hsv_circle_pos.x / hsv_size.x, 1.f - hsv_circle_pos.y / hsv_size.y };
-		new_clr = temp.to_rgb();
-		new_clr.a = alpha_pct;
+		hsv_val.s = std::clamp<float>((relative_pos.x - hsv_tl.x) / hsv_size.x, 0.f, 1.f);
+		hsv_val.v = 1.f - std::clamp<float>((relative_pos.y - hsv_tl.y) / hsv_size.y, 0.f, 1.f);
+		value_changed = true;
 	}
 
-	*p_color = new_clr;
+	if (value_changed)
+		update_color();
 }
 
 void color_editor::draw()
@@ -751,16 +649,17 @@ void color_editor::draw()
 	p_renderer->add_rect_filled_multicolor(top_left, size, style->bg.tl_clr, style->bg.tr_clr, style->bg.bl_clr, style->bg.br_clr);
 
 	// draw hsv editor
-	const auto hsv_tl = get_hsv_tl() + top_left;
+	const auto abs_hsv_tl = get_hsv_tl() + top_left;
 	const auto hsv_size = get_hsv_size();
-	//const vec2 half_hsv{hsv_size.x / 2.f, hsv_size.y}
 
-	color temp = get_sldr_clr(slider_pct);
-	p_renderer->add_rect_filled_multicolor(hsv_tl, hsv_size, colors::white, temp, colors::white, temp);
-	p_renderer->add_rect_filled_multicolor(hsv_tl, hsv_size, colors::clear, colors::clear, colors::black, colors::black);
+	color hue = color::get_from_hue(hsv_val.h);
+	p_renderer->add_rect_filled_multicolor(abs_hsv_tl, hsv_size, colors::white, hue, colors::white, hue);
+	p_renderer->add_rect_filled_multicolor(abs_hsv_tl, hsv_size, colors::clear, colors::clear, colors::black, colors::black);
 
-	p_renderer->add_circle(top_left + hsv_circle_pos, size.y * .025f, colors::black, 32);
-	p_renderer->add_circle(top_left + hsv_circle_pos, size.y * .03f, colors::white, 32);
+	const region hsv_rgn{abs_hsv_tl, hsv_size };
+	const vec2 hsv_circle_center{ top_left.x + hsv_val.s * hsv_size.x, top_left.y + (1.f - hsv_val.v) * hsv_size.y };
+	p_renderer->add_clipped_circle(hsv_rgn, hsv_circle_center, size.y * .025f, colors::black, 32);
+	p_renderer->add_clipped_circle(hsv_rgn, hsv_circle_center, size.y * .03f, colors::white, 32);
 
 	// draw alpha slider
 	const auto alpha_sldr_size = get_alpha_sldr_size();
@@ -811,7 +710,7 @@ void color_editor::draw()
 	p_renderer->add_rect_filled_multicolor({ clr_sldr_tl.x + rect_w * 5.f, clr_sldr_tl.y }, { rect_w, clr_sldr_size.y }, colors::purple, colors::red,    colors::purple, colors::red);
 
 	// rgb slider triangle markers
-	const float sldr_pct_x = clr_sldr_size.x * slider_pct;
+	const float sldr_pct_x = clr_sldr_size.x * hsv_val.h;
 	const vec2 tri_p1{ clr_sldr_tl.x + sldr_pct_x - triangle_size, clr_sldr_tl.y };
 	const vec2 tri_p2{ clr_sldr_tl.x + sldr_pct_x + triangle_size, clr_sldr_tl.y };
 	const vec2 tri_p3{ clr_sldr_tl.x + sldr_pct_x, clr_sldr_tl.y + triangle_size };

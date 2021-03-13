@@ -117,6 +117,18 @@ std::string vec3::to_string() const
 }
 
 //
+// region definition
+//
+
+bool region::is_within(const vec2& other) const
+{
+	return other.x >= top_left.x
+		&& other.y >= top_left.y
+		&& other.x <= top_left.x + size.x
+		&& other.y <= top_left.y + size.y;
+}
+
+//
 // color definitions
 //
 
@@ -169,39 +181,83 @@ hsv color::to_hsv() const
 	max = r > g ? r : g;
 	max = max > b ? max : b;
 
-	out.v = max;                                // v
+	out.v = max;                       
 	delta = max - min;
 	if (delta < 0.00001)
 	{
 		out.s = 0;
-		out.h = 0; // undefined, maybe nan?
+		out.h = 0;
 		return out;
 	}
-	if (max > 0.0) { // NOTE: if Max is == 0, this divide would cause a crash
-		out.s = (delta / max);                  // s
+	if (max > 0.0) {
+		out.s = (delta / max);                
 	}
-	else {
-		// if max is 0, then r = g = b = 0              
-		// s = 0, h is undefined
+	else 
+	{
 		out.s = 0.0;
-		out.h = NAN;                            // its now undefined
+		out.h = NAN;
 		return out;
 	}
-	if (r >= max)                           // > is bogus, just keeps compilor happy
-		out.h = (g - b) / delta;        // between yellow & magenta
+	if (r >= max)
+		out.h = (g - b) / delta; 
 	else
 		if (g >= max)
-			out.h = 2.0 + (b - r) / delta;  // between cyan & yellow
+			out.h = 2.0 + (b - r) / delta;
 		else
-			out.h = 4.0 + (r - g) / delta;  // between magenta & cyan
+			out.h = 4.0 + (r - g) / delta;
 
-	out.h *= 60.0;                              // degrees
+	out.h *= 60.0;
 
 	if (out.h < 0.0)
 		out.h += 360.0;
 
+	out.h /= 360.f;
 	return out;
 	
+}
+
+color color::get_from_hue(float hue)
+{
+	constexpr float one_sixth = 1.f / 6.f;
+	constexpr float two_sixth = 2.f / 6.f;
+	constexpr float three_sixth = 3.f / 6.f;
+	constexpr float four_sixth = 4.f / 6.f;
+	constexpr float five_sixth = 5.f / 6.f;
+
+	color clr{ 0.f, 0.f, 0.f, 1.f };
+
+	if (hue <= one_sixth)
+	{
+		clr.r = 1.f;
+		clr.g = hue / one_sixth;
+	}
+	else if (hue <= two_sixth)
+	{
+		clr.r = 1.f - (hue - one_sixth) / one_sixth;
+		clr.g = 1.f;
+	}
+	else if (hue <= three_sixth)
+	{
+		clr.g = 1.f;
+		clr.b = (hue - two_sixth) / one_sixth;
+	}
+	else if (hue <= four_sixth)
+	{
+		clr.g = 1.f - (hue - three_sixth) / one_sixth;
+		clr.b = 1.f;
+	}
+	else if (hue <= five_sixth)
+	{
+		clr.r = (hue - four_sixth) / one_sixth;
+		clr.b = 1.f;
+	}
+	else if (hue <= 1.f) // yes this is reduntant
+	{
+		clr.r = 1.f;
+		clr.b = 1.f - (hue - five_sixth) / one_sixth;
+	}
+
+	return clr;
 }
 
 std::string color::to_string() const
