@@ -12,6 +12,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_pa
     if (message == WM_CLOSE)
         std::cout << std::endl;
 
+    if (message == WM_DESTROY)
+        ::PostQuitMessage(0);
+    
     return DefWindowProc(hwnd, message, w_param, l_param);
 }
 
@@ -26,7 +29,7 @@ int main()
     wc.hInstance = GetModuleHandle(NULL);
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.lpszClassName = L"WindowClass";
-    RegisterClassExW(&wc);
+    auto rc_atom = RegisterClassExW(&wc);
 
     RECT wr = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
@@ -51,16 +54,16 @@ int main()
     globals::widget_lists[0].add_widget(&slider_test);
     globals::widget_lists[0].add_widget(&editor);
 
+    MSG msg;
     while (TRUE)
     {
-        MSG msg{0};
+        ZeroMemory(&msg, sizeof(msg));
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-
             if (msg.message == WM_QUIT)
                 break;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
 
         for (auto& widget_list : globals::widget_lists)
